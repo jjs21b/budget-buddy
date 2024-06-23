@@ -1,13 +1,15 @@
-import React from 'react';
-import HelloWorld from './components/HelloWorld';
+"use client"; // Add this directive at the top
+
+import React, { useState } from 'react';
+import Login from './components/Login';
 
 const Home = () => {
   return (
     <div>
-      <HelloWorld />
-      <h1>Welcome to the Home Page</h1>
+      <Login />
     </div>
   );
 };
+
 
 export default Home;
