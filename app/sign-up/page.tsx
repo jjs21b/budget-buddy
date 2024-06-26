@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';  // Import Link from next/link
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -116,6 +117,11 @@ const Signup = () => {
         >
           Sign Up
         </button>
+        <div className="flex justify-between mt-4">
+          <Link href="/" className="block w-full px-4 py-2 mt-4 font-bold text-white bg-green-500 rounded-md hover:bg-green-700 text-center">
+              Login
+          </Link>
+        </div>
       </form>
     </div>
   );
