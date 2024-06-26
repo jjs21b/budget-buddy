@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';  // Import Link from next/link
+import { useRouter } from 'next/navigation';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -22,11 +23,13 @@ const Login = () => {
       });
 
       if (response.status === 200) {
-        setSuccess('Login successful');
-        setError('');
+        const data = await response.json();
+        document.cookie = `token=${data.token}; path=/;`;
+        //console.log(document.cookie);
+        router.push('/main');
       } else {
         const data = await response.json();
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Failed to login');
       }
     } catch (error) {
       setError('An error occurred');
@@ -38,7 +41,6 @@ const Login = () => {
       <form onSubmit={handleSubmit} className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold">Login</h2>
         {error && <p className="text-red-500">{error}</p>}
-        {success && <p className="text-green-500">{success}</p>}
         <div>
           <label className="block text-sm font-medium text-gray-700">Email</label>
           <input
