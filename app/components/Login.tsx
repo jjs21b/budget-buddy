@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';  // Import Link from next/link
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -44,7 +45,7 @@ const Login = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="text-gray-700 block w-full px-4 py-2 mt-1 border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
+            className="block w-full px-4 py-2 mt-1 border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
           />
         </div>
         <div>
@@ -53,7 +54,7 @@ const Login = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="text-gray-700 block w-full px-4 py-2 mt-1 border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
+            className="block w-full px-4 py-2 mt-1 border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
           />
         </div>
         <button
@@ -62,6 +63,14 @@ const Login = () => {
         >
           Login
         </button>
+        <div className="flex justify-between mt-4">
+          <Link href="/forgot-password" className="text-sm text-blue-500 hover:underline">
+            Forgot Password?
+          </Link>
+          <Link href="/sign-up" className="text-sm text-blue-500 hover:underline">
+            Create Account
+          </Link>
+        </div>
       </form>
     </div>
   );
