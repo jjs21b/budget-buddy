@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // Find the user in the Supabase database
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, password')
+      .select('id, email, password, name')  // Make sure to include the name field
       .eq('email', email)
       .single();
 
@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     }
 
     // Generate JWT token using the secret key
-    const token = await new SignJWT({ id: user.id, email: user.email })
+    const token = await new SignJWT({ id: user.id, email: user.email, name: user.name })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('1h')
       .sign(secret);
-
+    
     return NextResponse.json({ token }, { status: 200 });
   } catch (error) {
     console.error('Failed to login:', error);

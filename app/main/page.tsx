@@ -7,7 +7,9 @@ import { jwtVerify, JWTPayload } from 'jose';
 interface UserPayload extends JWTPayload {
   id: string;
   email: string;
+  name: string; // Add the name field here
 }
+
 
 const MainPage = () => {
   const [user, setUser] = useState<UserPayload | null>(null);
@@ -21,7 +23,7 @@ const MainPage = () => {
       jwtVerify(token, secret)
         .then(({ payload }) => {
           const userPayload: UserPayload = payload as UserPayload;
-          if (userPayload.id && userPayload.email) {
+          if (userPayload.id && userPayload.email && userPayload.name) {
             setUser(userPayload);
           } else {
             throw new Error('Invalid token payload');
@@ -42,7 +44,7 @@ const MainPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-2xl font-bold">Hello, {user.email}</h1> {/* Displays user-specific information */}
+      <h1 className="text-2xl font-bold">Hello, {user.name}</h1> {/* Displays user-specific information */}
     </div>
   );
 };
