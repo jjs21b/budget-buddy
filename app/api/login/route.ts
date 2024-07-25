@@ -15,7 +15,6 @@ const secret = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET);
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
-
     // Find the user in the Supabase database
     const { data: user, error } = await supabase
       .from('users')

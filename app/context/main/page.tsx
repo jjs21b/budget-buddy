@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState , ChangeEvent } from 'react';
-import { buffer } from 'micro';
+
 import { useRouter } from 'next/navigation';
 import { jwtVerify, JWTPayload } from 'jose';
 
@@ -13,8 +13,7 @@ interface UserPayload extends JWTPayload {
 
 interface ExpenseRow {
   category: string;
-  amount: number;
-  date: string;  // Change amount to number
+  amount: number;  // Change amount to number
 }
 
 interface Recommendation {
@@ -36,7 +35,7 @@ const categories = [
 const MainPage = () => {
   const [user, setUser] = useState<UserPayload | null>(null);
   const router = useRouter();
-  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([{ category: '', amount: 0, date: ''}]);
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([{ category: '', amount: 0 }]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
 
   const handleCategoryChange = (index: number, value: string) => {
@@ -52,8 +51,7 @@ const MainPage = () => {
   };
 
   const handleAddRow = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setExpenseRows([...expenseRows, { category: '', amount: 0 , date: today}]);
+    setExpenseRows([...expenseRows, { category: '', amount: 0 }]);
   };
 
   const handleRemoveRow = (index: number) => {
@@ -61,42 +59,19 @@ const MainPage = () => {
     setExpenseRows(newExpenseRows);
   };
   const handleSave = async () => {
-    if (!user || !expenseRows) {
-        console.error("User data or expenses are missing.");
-        return;
-    }
-
-    // Preparing the data structure to match the required JSON format
-    const payload = {
-        userId: user.id,  // Assuming user object has an 'id' property
-        expenses: expenseRows.map(expense => ({
-            category: expense.category,
-            amount: expense.amount,
-            date: expense.date || new Date().toISOString().split('T')[0] // Default to current date if not provided
-        }))
-    };
-
+    const userId = 'user_id_placeholder'; // Replace with actual user ID logic
     try {
-        const response = await fetch('/api/main', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload) // Convert the payload to JSON string
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Successfully saved expenses:', result);
+      await fetch('/api/main', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, expenses: expenseRows }),
+      });
     } catch (error) {
-        console.error('An error occurred:', error);
+      console.error('An error occurred:', error);
     }
-};
-  
-  
+  };
   useEffect(() => {
     const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
     if (token) {
@@ -123,7 +98,6 @@ const MainPage = () => {
   if (!user) {
     return <div>Loading...</div>;
   }
-
 
 
   return (
@@ -205,11 +179,3 @@ const MainPage = () => {
 };
 
 export default MainPage;
-[
-  {
-      "user_id": "a1bfe1ac-e856-407e-a8bd-d2780a9cde9d",
-      "category": "Groceries",
-      "amount": 20,
-      "date": "2024-07-24"
-  }
-]
