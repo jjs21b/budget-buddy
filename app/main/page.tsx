@@ -34,7 +34,9 @@ const categories = [
 ];
 
 const MainPage = () => {
+  const [successMessage, setSuccessMessage] = useState('');
   const [user, setUser] = useState<UserPayload | null>(null);
+  const [error, setError] = useState('');
   const router = useRouter();
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([{ category: '', amount: 0, date: ''}]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -61,9 +63,18 @@ const MainPage = () => {
     setExpenseRows(newExpenseRows);
   };
   const handleSave = async () => {
-    if (!user || !expenseRows) {
-        console.error("User data or expenses are missing.");
+    if (!user) {
+        console.error("User data missing.");
         return;
+    }
+    const isValid = expenseRows.every(expense => expense.amount > 0 && categories.includes(expense.category.trim()) && 
+    expense.category.trim() !== '');
+    
+    console.log(`valid ${isValid}`);
+    if (!isValid){
+      setError('All expenses must have a valid number for amount and a non-empty category');
+      setSuccessMessage('');
+      return;
     }
 
     // Preparing the data structure to match the required JSON format
@@ -84,15 +95,17 @@ const MainPage = () => {
             },
             body: JSON.stringify(payload) // Convert the payload to JSON string
         });
-
+        const data = await response.json();
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(data.message || 'Failed to save the expense');
         }
 
-        const result = await response.json();
-        console.log('Successfully saved expenses:', result);
-    } catch (error) {
-        console.error('An error occurred:', error);
+        setSuccessMessage('Expense successfully added!');
+        setError(''); // Clear any previous errors
+      } catch (error: any) {
+        console.error('Failed to save expenses:', error);
+        setError(error.message || 'Failed to save expenses');
+        setSuccessMessage(''); // Clear any previous success messages
     }
 };
   
@@ -177,6 +190,8 @@ const MainPage = () => {
           ))}
         </tbody>
       </table>
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <button
         type="button"
         onClick={handleAddRow}
