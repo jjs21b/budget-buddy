@@ -61,9 +61,8 @@ export async function POST(request: Request) {
   }
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
-
+    const userId = await request.json();
+    console.log(userId);
     if (!userId) {
       return NextResponse.json({ success: false, message: 'User ID is required' }, { status: 400 });
     }

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState , ChangeEvent } from 'react';
-import { buffer } from 'micro';
 import { useRouter } from 'next/navigation';
 import { jwtVerify, JWTPayload } from 'jose';
 
@@ -13,13 +12,19 @@ interface UserPayload extends JWTPayload {
 
 interface ExpenseRow {
   category: string;
-  amount: number;
+  amount: number | "";
   date: string;  // Change amount to number
 }
 
 interface Recommendation {
   message: string;
   category: string;
+}
+interface ExpenseData {
+  id: number;
+  category: string;
+  amount: number;
+  date: string;
 }
 const categories = [
   'Rent',
@@ -37,6 +42,8 @@ const MainPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [user, setUser] = useState<UserPayload | null>(null);
   const [error, setError] = useState('');
+  const [fetchedExpenses, setFetchedExpenses] = useState<ExpenseData[]>([]);
+
   const router = useRouter();
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([{ category: '', amount: 0, date: ''}]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -58,21 +65,18 @@ const MainPage = () => {
     setExpenseRows([...expenseRows, { category: '', amount: 0 , date: today}]);
   };
 
-  const handleRemoveRow = (index: number) => {
-    const newExpenseRows = expenseRows.filter((_, i) => i !== index);
-    setExpenseRows(newExpenseRows);
+  const handleRemoveRow = (index:number) => {
+    const newRows = [...expenseRows];
+    newRows.splice(index, 1);
+    setExpenseRows(newRows);
   };
   const handleSave = async () => {
     if (!user) {
         console.error("User data missing.");
         return;
     }
-    const isValid = expenseRows.every(expense => expense.amount > 0 && categories.includes(expense.category.trim()) && 
-    expense.category.trim() !== '');
-    
-    console.log(`valid ${isValid}`);
-    if (!isValid){
-      setError('All expenses must have a valid number for amount and a non-empty category');
+    if (expenseRows.some(expense => !expense.category || !expense.amount)) {
+      setError('All fields must be filled out correctly.');
       setSuccessMessage('');
       return;
     }
@@ -97,7 +101,7 @@ const MainPage = () => {
         });
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to save the expense');
+          throw new Error(`Error: ${data.message}` || 'Failed to save the expense');
         }
 
         setSuccessMessage('Expense successfully added!');
@@ -108,6 +112,24 @@ const MainPage = () => {
         setSuccessMessage(''); // Clear any previous success messages
     }
 };
+  const showCurrentExpenses = async (): Promise<void> => {
+    try {
+      const response = await fetch('/api/main', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: user?.id
+      
+      });
+      const expenses: ExpenseData[] = await response.json();
+      if (!response.ok) throw new Error('Failed to fetch expenses');
+      setFetchedExpenses(expenses);
+    } catch (error: any) {
+      setError('Error: Failed to load current expenses');
+    }
+  };
+
   
   
   useEffect(() => {
@@ -132,7 +154,16 @@ const MainPage = () => {
       router.push('/');
     }
   }, [router]);
-
+  
+  useEffect(() => {
+    if (user) { // Only run when there is a user
+      showCurrentExpenses();
+    }
+  }, [user]); // Depend on user state
+  useEffect(() => {
+    console.log(fetchedExpenses);
+  }, [fetchedExpenses])
+  
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -140,82 +171,71 @@ const MainPage = () => {
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-2xl font-bold">Hello, {user.name}</h1> {/* Displays user-specific information */}
-      <h1 className="text-4xl font-bold mb-6">Optimize Your Expenses Today</h1>
-      <table className="w-full max-w-4xl mb-6 bg-white rounded-lg shadow-md">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="px-4 py-2">Category</th>
-            <th className="px-4 py-2">Amount ($)</th>
-            <th className="px-4 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenseRows.map((row, index) => (
-            <tr key={index}>
-              <td className="border px-4 py-2">
-                <input
-                  type="text"
-                  list={`category-options-${index}`}
-                  value={row.category}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleCategoryChange(index, e.target.value)}
-                  className="text-black w-full px-2 py-1 border rounded-md focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
-                />
-                <datalist id={`category-options-${index}`}>
-                  {categories.map((category, i) => (
-                    <option key={i} value={category} />
-                  ))}
-                  <option value="Other">Other</option>
-                </datalist>
-              </td>
-              <td className="border px-4 py-2">
-                <input
-                  type="number"
-                  value={row.amount}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(index, parseFloat(e.target.value))}
-                  className="text-black w-full px-2 py-1 border rounded-md focus:ring focus:ring-opacity-50 focus:ring-blue-500 focus:outline-none"
-                />
-              </td>
-              <td className="border px-4 py-2">
-                <button
-                  type="button"
-                  onClick={() => handleRemoveRow(index)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <button
-        type="button"
-        onClick={handleAddRow}
-        className="mb-6 px-4 py-2 font-bold text-white bg-blue-500 rounded-md hover:bg-blue-700"
-      >
-        Add Expense
-      </button>
-      <button
-        type="button"
-        onClick={handleSave}
-        className="px-4 py-2 font-bold text-white bg-green-500 rounded-md hover:bg-green-700"
-      >
-        Save Expenses
-      </button>
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-lg font-semibold">Hello, {user.name}</h1>
+      <h2 className="text-xl font-bold text-center mb-4">Optimize Your Expenses Today</h2>
 
-      <h2 className="text-2xl font-bold mt-6">Financial Recommendations</h2>
-      <ul className="mt-4">
-        {recommendations.map((rec, index) => (
-          <li key={index} className="mb-2">
-            {rec.message}
-          </li>
-        ))}
-      </ul>
+      <div className="mb-6">
+        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" className="py-3 px-6">Category</th>
+              <th scope="col" className="py-3 px-6">Amount ($)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenseRows.map((expense, index) => (
+              <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                <td className="py-4 px-6">
+                  <select
+                    value={expense.category}
+                    onChange={(e) => {
+                      const newRows = [...expenseRows];
+                      newRows[index].category = e.target.value;
+                      setExpenseRows(newRows);
+                    }}
+                    className="form-select block w-full mt-1 text-black" // Added text-black here
+                  >
+                    {categories.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="py-4 px-6">
+                  <input
+                    type="number"
+                    value={expense.amount}
+                    onChange={(e) => {
+                      const newRows = [...expenseRows];
+                      newRows[index].amount = e.target.value === '' ? '' : parseFloat(e.target.value);
+                      setExpenseRows(newRows);
+                    }}
+                    className="form-input mt-1 block w-full text-black" // Added text-black here
+                    placeholder="Enter amount"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <button onClick={handleAddRow} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Expense
+        </button>
+        <button onClick={handleSave} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+          Save Expenses
+        </button>
+        <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+          Begin Analysis
+        </button>
+      </div>
+
+      {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+      {successMessage && <p className="text-green-500 text-center mt-2">{successMessage}</p>}
     </div>
+
   );
 };
 
